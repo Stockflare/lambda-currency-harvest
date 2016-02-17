@@ -15,6 +15,7 @@ exports.handler = function(event, context) {
     console.log(fx_result);
 
     // Do a post to api-currency fo every currency
+    var updated_at = Math.floor(new Date().getTime() / 1000);
     promises = _.map(_.keys(fx_result), function(key, index, currencies){
       return when.promise(function(resolve, reject, notify){
         rest.post(event.currency_url, {
@@ -22,7 +23,7 @@ exports.handler = function(event, context) {
             from: key,
             to: 'usd',
             rate: 1.0 / fx_result[key],
-            updated_at: Math.floor(new Date().getTime() / 1000)
+            updated_at: updated_at
           }
         }).on('success', function(currency_result, response){
           resolve(fx_result[key]);
@@ -34,8 +35,10 @@ exports.handler = function(event, context) {
     });
 
     when.all(promises).done(function(){
+      console.log("Successfully harvested currencies");
       context.succeed("Successfully harvested currencies");
     }, function(reason){
+      console.log("Failed to post to api-currency: " + reason);
       context.fail("Failed to post to api-currency: " + reason);
     });
 
